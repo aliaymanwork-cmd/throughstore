@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abayah — Luxury Islamic Fashion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --black:#0a0a0a;--cream:#f5f0e8;--gold:#b8965a;--gold-light:#d4b483;
+  --gold-dark:#8b6e3a;--white:#fdfcfa;--muted:#6b6256;
+  --border:#e8e0d0;--card-bg:#f9f6f0;
+}
+body{font-family:'Jost',sans-serif;background:var(--white);color:var(--black);font-size:15px;line-height:1.6;padding-bottom:70px}
+
+/* ─── TOAST ─── */
+#toast{position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--black);color:var(--white);padding:12px 24px;font-size:12px;letter-spacing:2px;text-transform:uppercase;opacity:0;transition:all .3s;z-index:999;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ─── DRAWER ─── */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;opacity:0;pointer-events:none;transition:opacity .3s}
+.drawer-overlay.open{opacity:1;pointer-events:all}
+.drawer{position:fixed;right:-100%;top:0;bottom:0;width:90%;max-width:380px;background:var(--white);z-index:201;transition:right .35s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.drawer.open{right:0}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:20px;border-bottom:0.5px solid var(--border)}
+.drawer-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;letter-spacing:1px}
+.drawer-close{width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:0.5px solid var(--border)}
+.drawer-body{flex:1;overflow-y:auto;padding:20px}
+.cart-empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.cart-empty svg{margin-bottom:16px;opacity:0.3}
+.cart-empty p{font-size:13px;letter-spacing:1px}
+.cart-item{display:flex;gap:14px;padding:16px 0;border-bottom:0.5px solid var(--border)}
+.cart-item-img{width:70px;height:90px;background:var(--card-bg);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.cart-item-info{flex:1;display:flex;flex-direction:column;justify-content:space-between}
+.cart-item-name{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:400;line-height:1.2}
+.cart-item-variant{font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:4px}
+.cart-item-price{font-size:14px;font-weight:500}
+.cart-item-actions{display:flex;align-items:center;gap:12px;margin-top:8px}
+.qty-btn{width:26px;height:26px;border:0.5px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--black)}
+.qty-display{font-size:13px;min-width:20px;text-align:center}
+.cart-remove{margin-left:auto;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);cursor:pointer;border:none;background:none;font-family:'Jost',sans-serif}
+.drawer-footer{padding:20px;border-top:0.5px solid var(--border)}
+.cart-total{display:flex;justify-content:space-between;margin-bottom:16px}
+.cart-total-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.cart-total-amount{font-size:18px;font-family:'Cormorant Garamond',serif;font-weight:400}
+.btn-checkout{width:100%;background:var(--black);color:var(--white);padding:16px;font-size:12px;letter-spacing:3px;text-transform:uppercase;font-family:'Jost',sans-serif;font-weight:400;border:none;cursor:pointer;margin-bottom:10px}
+.btn-continue{width:100%;background:transparent;color:var(--muted);padding:12px;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-family:'Jost',sans-serif;font-weight:300;border:0.5px solid var(--border);cursor:pointer}
+
+/* ─── NAV ─── */
+nav{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:0.5px solid var(--border);position:sticky;top:0;background:var(--white);z-index:100}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;letter-spacing:4px;text-transform:uppercase;cursor:pointer}
+.nav-logo span{color:var(--gold)}
+.nav-icons{display:flex;gap:18px;align-items:center}
+.nav-icon{width:22px;height:22px;cursor:pointer;opacity:0.8;flex-shrink:0}
+.nav-icon:hover{opacity:1}
+.cart-badge{position:relative;cursor:pointer}
+.badge{position:absolute;top:-6px;right:-6px;background:var(--gold);color:white;font-size:9px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Jost',sans-serif;font-weight:500}
+.hamburger{display:flex;flex-direction:column;gap:5px;cursor:pointer}
+.hamburger span{width:22px;height:1px;background:var(--black);transition:all .2s}
+
+/* ─── MOBILE MENU ─── */
+.mobile-menu{position:fixed;inset:0;background:var(--white);z-index:300;transform:translateX(-100%);transition:transform .35s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.mobile-menu.open{transform:translateX(0)}
+.mobile-menu-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:0.5px solid var(--border)}
+.menu-close{width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:var(--muted)}
+.mobile-menu-links{padding:32px 24px;display:flex;flex-direction:column;gap:4px}
+.menu-link{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;padding:8px 0;border-bottom:0.5px solid var(--border);cursor:pointer;color:var(--black);text-decoration:none;display:block;letter-spacing:1px}
+.menu-link:hover{color:var(--gold)}
+.mobile-menu-footer{margin-top:auto;padding:24px;border-top:0.5px solid var(--border)}
+.menu-footer-links{display:flex;gap:20px;flex-wrap:wrap}
+.menu-footer-link{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);cursor:pointer}
+
+/* ─── HERO ─── */
+.hero{background:var(--black);color:var(--white);min-height:88vh;display:flex;flex-direction:column;justify-content:flex-end;padding:48px 24px 40px;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:linear-gradient(160deg,#1a1510 0%,#0a0a0a 55%,#12100a 100%)}
+.hero-pattern{position:absolute;inset:0;opacity:0.04;background-image:repeating-linear-gradient(45deg,#b8965a 0,#b8965a 1px,transparent 0,transparent 50%);background-size:20px 20px}
+.hero-circle{position:absolute;top:28px;right:24px;width:90px;height:90px;border:0.5px solid rgba(184,150,90,0.25);border-radius:50%}
+.hero-circle::after{content:'';position:absolute;inset:14px;border:0.5px solid rgba(184,150,90,0.15);border-radius:50%}
+.hero-circle::before{content:'';position:absolute;inset:28px;border:0.5px solid rgba(184,150,90,0.1);border-radius:50%}
+.hero-eyebrow{font-size:10px;letter-spacing:5px;color:var(--gold);text-transform:uppercase;margin-bottom:18px;font-weight:300}
+.hero-title{font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:300;line-height:1.05;margin-bottom:16px;position:relative}
+.hero-title em{font-style:italic;color:var(--gold-light)}
+.hero-sub{font-size:13px;color:rgba(255,255,255,0.45);letter-spacing:0.5px;font-weight:300;margin-bottom:36px;max-width:270px;line-height:1.8}
+.hero-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.btn-gold{background:var(--gold);color:var(--black);padding:15px 32px;font-size:11px;letter-spacing:3px;text-transform:uppercase;font-family:'Jost',sans-serif;font-weight:500;border:none;cursor:pointer;transition:background .2s}
+.btn-gold:hover{background:var(--gold-light)}
+.btn-ghost{background:transparent;color:rgba(255,255,255,0.6);padding:15px 22px;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-family:'Jost',sans-serif;font-weight:300;border:0.5px solid rgba(255,255,255,0.2);cursor:pointer}
+.hero-stats{position:absolute;bottom:44px;right:24px;text-align:right}
+.hero-stat-num{font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--gold-light);display:block;font-weight:300}
+.hero-stat-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.25);font-weight:300}
+
+/* ─── MARQUEE ─── */
+.marquee-wrap{border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);padding:14px 0;overflow:hidden;background:var(--cream)}
+.marquee{display:flex;gap:40px;white-space:nowrap;animation:scroll-marquee 22s linear infinite}
+.marquee-item{font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--muted);font-weight:300;display:inline-flex;align-items:center;gap:16px;flex-shrink:0}
+.marquee-dot{width:4px;height:4px;background:var(--gold);border-radius:50%;flex-shrink:0}
+@keyframes scroll-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ─── SECTIONS ─── */
+.section{padding:44px 20px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.section-title{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;letter-spacing:1px}
+.section-link{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);font-weight:400;cursor:pointer;border-bottom:0.5px solid var(--gold);padding-bottom:2px}
+
+/* ─── CATEGORIES ─── */
+.categories{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cat-card{position:relative;overflow:hidden;cursor:pointer}
+.cat-card:first-child{grid-column:1/-1}
+.cat-card:first-child .cat-inner{aspect-ratio:16/8}
+.cat-card:not(:first-child) .cat-inner{aspect-ratio:3/4}
+.cat-inner{width:100%;height:100%;display:flex;align-items:flex-end;position:relative}
+.cat-bg-1{background:linear-gradient(160deg,#1a1510,#2d1f0e,#1a1208)}
+.cat-bg-2{background:linear-gradient(160deg,#0d0d14,#1a1530,#0d0d14)}
+.cat-bg-3{background:linear-gradient(160deg,#0e1410,#1a2820,#0e1410)}
+.cat-bg-4{background:linear-gradient(160deg,#14100e,#281e14,#14100e)}
+.cat-pattern{position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,rgba(184,150,90,0.06) 0,rgba(184,150,90,0.06) 1px,transparent 0,transparent 50%);background-size:16px 16px}
+.cat-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,10,0.9) 0%,rgba(10,10,10,0.05) 70%)}
+.cat-label{position:relative;z-index:1;padding:20px 18px;width:100%}
+.cat-tag{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);font-weight:300;display:block;margin-bottom:6px}
+.cat-name{font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--white);font-weight:300;display:block;line-height:1.1}
+.cat-count{font-size:10px;color:rgba(255,255,255,0.35);margin-top:5px;display:block;letter-spacing:1px}
+
+/* ─── PRODUCT GRID ─── */
+.products{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.product-card{cursor:pointer}
+.product-card.wide{grid-column:1/-1}
+.product-img{background:var(--card-bg);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.product-card:not(.wide) .product-img{aspect-ratio:3/4}
+.product-card.wide .product-img{aspect-ratio:16/8}
+.p-bg-1{background:linear-gradient(135deg,#1a1510,#2a1f10)}
+.p-bg-2{background:linear-gradient(135deg,#0d0d14,#1a1530)}
+.p-bg-3{background:linear-gradient(135deg,#0e1410,#1a2818)}
+.p-bg-4{background:linear-gradient(135deg,#14100e,#281e14)}
+.p-bg-5{background:linear-gradient(135deg,#12101a,#1e1528)}
+.product-badge{position:absolute;top:12px;left:12px;background:var(--black);color:var(--white);font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:5px 10px;font-family:'Jost',sans-serif;z-index:2}
+.product-badge.gold{background:var(--gold);color:var(--black)}
+.product-badge.red{background:#8b3030;color:var(--white)}
+.wishlist-btn{position:absolute;top:12px;right:12px;width:32px;height:32px;background:var(--white);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;border:none;transition:background .2s}
+.wishlist-btn:hover{background:var(--cream)}
+.wishlist-btn.active svg{fill:var(--gold);stroke:var(--gold)}
+.quick-add{position:absolute;bottom:0;left:0;right:0;background:var(--black);color:var(--white);padding:12px;font-size:10px;letter-spacing:3px;text-transform:uppercase;font-family:'Jost',sans-serif;text-align:center;transform:translateY(100%);transition:transform .25s;cursor:pointer;z-index:2;border:none}
+.product-card:hover .quick-add{transform:translateY(0)}
+.product-info{padding:14px 4px 4px}
+.product-brand{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:5px;font-weight:400}
+.product-name{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:400;line-height:1.2;margin-bottom:8px}
+.product-price{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.price-current{font-size:15px;font-weight:500;color:var(--black)}
+.price-old{font-size:12px;color:var(--muted);text-decoration:line-through}
+.price-off{font-size:10px;color:var(--gold);font-weight:400;letter-spacing:1px}
+.product-colors{display:flex;gap:6px;margin-top:10px}
+.color-dot{width:14px;height:14px;border-radius:50%;border:0.5px solid var(--border);cursor:pointer;transition:box-shadow .15s}
+.color-dot.active,.color-dot:hover{box-shadow:0 0 0 1.5px white, 0 0 0 3px var(--gold)}
+
+/* ─── GOLD DIVIDER ─── */
+.gold-divider{display:flex;align-items:center;gap:14px;padding:0 20px;margin:4px 0}
+.gold-divider::before,.gold-divider::after{content:'';flex:1;height:0.5px;background:var(--border)}
+.divider-gem{color:var(--gold);font-size:14px;opacity:0.5}
+
+/* ─── PROMO BANNER ─── */
+.promo-banner{margin:0 20px;background:var(--black);padding:40px 28px;text-align:center;position:relative;overflow:hidden}
+.promo-banner::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.promo-banner::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.promo-pattern{position:absolute;inset:0;opacity:0.04;background-image:repeating-linear-gradient(45deg,#b8965a 0,#b8965a 1px,transparent 0,transparent 50%);background-size:16px 16px}
+.promo-eyebrow{font-size:9px;letter-spacing:5px;color:var(--gold);text-transform:uppercase;margin-bottom:12px;font-weight:300;position:relative}
+.promo-title{font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--white);font-weight:300;margin-bottom:10px;line-height:1.15;position:relative}
+.promo-title em{color:var(--gold-light);font-style:italic}
+.promo-sub{font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:28px;letter-spacing:1px;font-weight:300;position:relative;line-height:1.8}
+.promo-btn{display:inline-block;border:0.5px solid var(--gold);color:var(--gold);padding:13px 32px;font-size:10px;letter-spacing:4px;text-transform:uppercase;cursor:pointer;font-family:'Jost',sans-serif;position:relative;transition:all .2s;background:transparent}
+.promo-btn:hover{background:var(--gold);color:var(--black)}
+
+/* ─── TRUST BADGES ─── */
+.trust-section{padding:32px 20px;background:var(--cream);display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.trust-item{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:20px 12px;background:var(--white);border:0.5px solid var(--border)}
+.trust-icon{width:32px;height:32px;opacity:0.7}
+.trust-label{font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--black)}
+.trust-sub{font-size:11px;color:var(--muted);font-weight:300;line-height:1.5}
+
+/* ─── TESTIMONIALS ─── */
+.testimonials{background:var(--cream);padding:44px 20px}
+.testimonial-track{display:flex;flex-direction:column;gap:12px}
+.testimonial-card{background:var(--white);padding:24px;border:0.5px solid var(--border)}
+.stars{color:var(--gold);font-size:12px;letter-spacing:3px;margin-bottom:14px}
+.testimonial-text{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:300;font-style:italic;line-height:1.55;color:var(--black);margin-bottom:18px}
+.testimonial-author{display:flex;align-items:center;gap:12px}
+.author-avatar{width:36px;height:36px;border-radius:50%;background:var(--black);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--gold);font-family:'Cormorant Garamond',serif;font-weight:300}
+.author-name{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:300}
+.author-location{font-size:10px;color:var(--gold);letter-spacing:1px}
+
+/* ─── NEWSLETTER ─── */
+.newsletter{padding:44px 20px;text-align:center;border-top:0.5px solid var(--border)}
+.newsletter-eyebrow{font-size:10px;letter-spacing:5px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;font-weight:300}
+.newsletter-title{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;margin-bottom:10px;line-height:1.2}
+.newsletter-sub{font-size:13px;color:var(--muted);margin-bottom:28px;font-weight:300;line-height:1.7;max-width:300px;margin-left:auto;margin-right:auto}
+.newsletter-form{display:flex;flex-direction:column;gap:10px;max-width:340px;margin:0 auto}
+.newsletter-input{padding:15px 18px;border:0.5px solid var(--border);background:var(--card-bg);font-family:'Jost',sans-serif;font-size:13px;outline:none;color:var(--black);letter-spacing:0.5px}
+.newsletter-input:focus{border-color:var(--gold)}
+.newsletter-input::placeholder{color:var(--muted);letter-spacing:1px;font-size:12px}
+.newsletter-btn{background:var(--black);color:var(--white);padding:15px;font-size:11px;letter-spacing:4px;text-transform:uppercase;font-family:'Jost',sans-serif;font-weight:400;border:none;cursor:pointer;transition:background .2s}
+.newsletter-btn:hover{background:var(--gold);color:var(--black)}
+.newsletter-note{font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:6px;font-weight:300}
+
+/* ─── FOOTER ─── */
+footer{background:var(--black);color:var(--white);padding:44px 20px 28px}
+.footer-top{margin-bottom:32px}
+.footer-logo{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;letter-spacing:4px;text-transform:uppercase;margin-bottom:6px}
+.footer-logo span{color:var(--gold)}
+.footer-tagline{font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:3px;font-weight:300;text-transform:uppercase}
+.footer-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px}
+.footer-col-title{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;font-weight:400}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:12px}
+.footer-links li{font-size:13px;color:rgba(255,255,255,0.4);font-weight:300;cursor:pointer;transition:color .15s;letter-spacing:0.5px}
+.footer-links li:hover{color:rgba(255,255,255,0.8)}
+.footer-social{display:flex;gap:12px;margin-top:24px}
+.social-btn{width:36px;height:36px;border:0.5px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,0.4);transition:all .2s}
+.social-btn:hover{border-color:var(--gold);color:var(--gold)}
+.footer-bottom{border-top:0.5px solid rgba(255,255,255,0.08);padding-top:20px}
+.footer-pay{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.pay-badge{background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);padding:6px 12px;font-size:9px;letter-spacing:1px;color:rgba(255,255,255,0.3);text-transform:uppercase;font-family:'Jost',sans-serif}
+.footer-copy{font-size:10px;color:rgba(255,255,255,0.15);letter-spacing:2px;font-weight:300;text-transform:uppercase}
+
+/* ─── BOTTOM NAV ─── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:0.5px solid var(--border);display:flex;justify-content:space-around;padding:10px 0 18px;z-index:100}
+.bottom-item{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);cursor:pointer;font-weight:300;transition:color .15s;border:none;background:none;font-family:'Jost',sans-serif}
+.bottom-item.active{color:var(--black)}
+.bottom-item svg{width:20px;height:20px;stroke-width:1.2}
+
+/* ─── RESPONSIVE ─── */
+@media(min-width:640px){
+  .products{grid-template-columns:repeat(3,1fr)}
+  .product-card.wide{grid-column:1/-1}
+  .categories{grid-template-columns:repeat(3,1fr)}
+  .cat-card:first-child{grid-column:1/-1}
+  .trust-section{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://cyewvbrkmepbsrpfgfed.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_lxrs-jLDAVx6Wl0RqLw76Q_MDnWuy2s';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+</head>
+<body>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- CART DRAWER -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeCart()"></div>
+<div class="drawer" id="cartDrawer">
+  <div class="drawer-header">
+    <h2 class="drawer-title">Your Bag</h2>
+    <button class="drawer-close" onclick="closeCart()">✕</button>
+  </div>
+  <div class="drawer-body" id="cartBody">
+    <div class="cart-empty" id="cartEmpty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <p>Your bag is empty</p>
+    </div>
+    <div id="cartItems"></div>
+  </div>
+  <div class="drawer-footer" id="cartFooter" style="display:none">
+    <div class="cart-total">
+      <span class="cart-total-label">Total</span>
+      <span class="cart-total-amount" id="cartTotal">₹0</span>
+    </div>
+    <button class="btn-checkout" onclick="showToast('Checkout coming soon!')">Proceed to Checkout</button>
+    <button class="btn-continue" onclick="closeCart()">Continue Shopping</button>
+  </div>
+</div>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <div class="mobile-menu-head">
+    <div class="nav-logo">ABA<span>Y</span>AH</div>
+    <div class="menu-close" onclick="closeMenu()">✕</div>
+  </div>
+  <div class="mobile-menu-links">
+    <a class="menu-link" href="#">New Arrivals</a>
+    <a class="menu-link" href="#">Classic Abayas</a>
+    <a class="menu-link" href="#">Luxury Line</a>
+    <a class="menu-link" href="#">Modest Wear</a>
+    <a class="menu-link" href="#">Accessories</a>
+    <a class="menu-link" href="#">Lookbook</a>
+  </div>
+  <div class="mobile-menu-footer">
+    <div class="menu-footer-links">
+      <span class="menu-footer-link">Size Guide</span>
+      <span class="menu-footer-link">Contact</span>
+      <span class="menu-footer-link">Returns</span>
+      <span class="menu-footer-link">Track Order</span>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="hamburger" onclick="openMenu()">
+    <span></span><span></span><span></span>
+  </div>
+  <div class="nav-logo">ABA<span>Y</span>AH</div>
+  <div class="nav-icons">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+    <div class="cart-badge" onclick="openCart()">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <span class="badge" id="cartCount">0</span>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-pattern"></div>
+  <div class="hero-circle"></div>
+  <div style="position:relative;z-index:2">
+    <p class="hero-eyebrow">New Collection · Summer 2025</p>
+    <h1 class="hero-title">Draped in<br><em>Elegance</em></h1>
+    <p class="hero-sub">Luxury abayas crafted for the modern woman of faith. Timeless. Refined. Yours.</p>
+    <div class="hero-actions">
+      <button class="btn-gold" onclick="document.querySelector('.section').scrollIntoView({behavior:'smooth'})">Explore Collection</button>
+      <button class="btn-ghost">View Lookbook</button>
+    </div>
+  </div>
+  <div class="hero-stats">
+    <span class="hero-stat-num">200+</span>
+    <span class="hero-stat-label">Styles</span>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee">
+    <span class="marquee-item"><span class="marquee-dot"></span>Free shipping above ₹999</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Handcrafted in India</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Easy 14-day returns</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Premium fabrics only</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Custom sizing available</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>COD available</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Free shipping above ₹999</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Handcrafted in India</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Easy 14-day returns</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Premium fabrics only</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Custom sizing available</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>COD available</span>
+  </div>
+</div>
+
+<!-- CATEGORIES -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Shop by Collection</h2>
+    <span class="section-link">View all</span>
+  </div>
+  <div class="categories">
+    <div class="cat-card">
+      <div class="cat-inner cat-bg-1">
+        <div class="cat-pattern"></div>
+        <div class="cat-overlay"></div>
+        <div class="cat-label">
+          <span class="cat-tag">Featured</span>
+          <span class="cat-name">Classic Abayas</span>
+          <span class="cat-count">48 styles available</span>
+        </div>
+      </div>
+    </div>
+    <div class="cat-card">
+      <div class="cat-inner cat-bg-2">
+        <div class="cat-pattern"></div>
+        <div class="cat-overlay"></div>
+        <div class="cat-label">
+          <span class="cat-tag">Exclusive</span>
+          <span class="cat-name">Luxury Line</span>
+          <span class="cat-count">24 styles</span>
+        </div>
+      </div>
+    </div>
+    <div class="cat-card">
+      <div class="cat-inner cat-bg-3">
+        <div class="cat-pattern"></div>
+        <div class="cat-overlay"></div>
+        <div class="cat-label">
+          <span class="cat-tag">New</span>
+          <span class="cat-name">Modest Wear</span>
+          <span class="cat-count">36 styles</span>
+        </div>
+      </div>
+    </div>
+    <div class="cat-card">
+      <div class="cat-inner cat-bg-4">
+        <div class="cat-pattern"></div>
+        <div class="cat-overlay"></div>
+        <div class="cat-label">
+          <span class="cat-tag">Add-ons</span>
+          <span class="cat-name">Accessories</span>
+          <span class="cat-count">60+ pieces</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="gold-divider"><span class="divider-gem">✦</span></div>
+
+<!-- NEW ARRIVALS -->
+<section class="section" style="padding-top:32px">
+  <div class="section-header">
+    <h2 class="section-title">New Arrivals</h2>
+    <span class="section-link">See all</span>
+  </div>
+  <div class="products" id="productGrid">
+    <!-- Products rendered by JS -->
+  </div>
+</section>
+
+<!-- PROMO BANNER -->
+<div class="promo-banner">
+  <div class="promo-pattern"></div>
+  <p class="promo-eyebrow">Limited Time Offer</p>
+  <h2 class="promo-title">Eid<br><em>Collection</em><br>is Here</h2>
+  <p class="promo-sub">Celebrate in style with up to 30% off<br>on selected premium styles</p>
+  <button class="promo-btn">Shop Eid Edit</button>
+</div>
+
+<div style="height:40px"></div>
+
+<!-- TRUST BADGES -->
+<div class="trust-section">
+  <div class="trust-item">
+    <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1" y="3" width="15" height="13"/><path d="m16 8 5 5v5h-5V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    <span class="trust-label">Free Shipping</span>
+    <span class="trust-sub">On all orders above ₹999</span>
+  </div>
+  <div class="trust-item">
+    <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span class="trust-label">Easy Returns</span>
+    <span class="trust-sub">14-day hassle-free policy</span>
+  </div>
+  <div class="trust-item">
+    <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <span class="trust-label">Secure Pay</span>
+    <span class="trust-sub">100% secure checkout</span>
+  </div>
+  <div class="trust-item">
+    <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    <span class="trust-label">Handcrafted</span>
+    <span class="trust-sub">With love in India</span>
+  </div>
+</div>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <div class="section-header">
+    <h2 class="section-title">Our Community</h2>
+    <span class="section-link">All reviews</span>
+  </div>
+  <div class="testimonial-track">
+    <div class="testimonial-card">
+      <div class="stars">★★★★★</div>
+      <p class="testimonial-text">"The quality is unmatched. I've ordered three abayas and each one feels like it was made just for me. The fabric is absolutely divine."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">FA</div>
+        <div>
+          <div class="author-name">Fatima Al-Hassan</div>
+          <div class="author-location">Dubai, UAE · Verified Purchase</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial-card">
+      <div class="stars">★★★★★</div>
+      <p class="testimonial-text">"Finally a brand that understands modest fashion doesn't mean compromising on luxury. The embroidery is breathtaking."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">ZM</div>
+        <div>
+          <div class="author-name">Zainab Mirza</div>
+          <div class="author-location">London, UK · Verified Purchase</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial-card">
+      <div class="stars">★★★★★</div>
+      <p class="testimonial-text">"Fast delivery to Kerala, packaging was gorgeous. The black silk abaya is even more beautiful in person. Will order again!"</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">AR</div>
+        <div>
+          <div class="author-name">Aisha Raheem</div>
+          <div class="author-location">Kerala, India · Verified Purchase</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NEWSLETTER -->
+<section class="newsletter">
+  <p class="newsletter-eyebrow">Stay Connected</p>
+  <h2 class="newsletter-title">Join Our World</h2>
+  <p class="newsletter-sub">Get early access to new arrivals, exclusive offers and styling inspiration</p>
+  <div class="newsletter-form">
+    <input class="newsletter-input" type="email" id="emailInput" placeholder="Your email address">
+    <button class="newsletter-btn" onclick="subscribeEmail()">Subscribe</button>
+    <p class="newsletter-note">No spam. Unsubscribe anytime.</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-logo">ABA<span>Y</span>AH</div>
+    <div class="footer-tagline">Modest · Luxurious · Timeless</div>
+    <div class="footer-social">
+      <div class="social-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+      </div>
+      <div class="social-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+      </div>
+      <div class="social-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M21 2H3v16l4-4h14V2z"/></svg>
+      </div>
+    </div>
+  </div>
+  <div class="footer-grid">
+    <div>
+      <p class="footer-col-title">Shop</p>
+      <ul class="footer-links">
+        <li>New Arrivals</li>
+        <li>Classic Abayas</li>
+        <li>Luxury Line</li>
+        <li>Modest Wear</li>
+        <li>Accessories</li>
+        <li>Sale</li>
+      </ul>
+    </div>
+    <div>
+      <p class="footer-col-title">Help</p>
+      <ul class="footer-links">
+        <li>Size Guide</li>
+        <li>Shipping Info</li>
+        <li>Returns & Exchanges</li>
+        <li>Contact Us</li>
+        <li>Track Order</li>
+        <li>FAQ</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-pay">
+      <span class="pay-badge">Visa</span>
+      <span class="pay-badge">Mastercard</span>
+      <span class="pay-badge">UPI</span>
+      <span class="pay-badge">Razorpay</span>
+      <span class="pay-badge">COD</span>
+    </div>
+    <p class="footer-copy">© 2025 Abayah. All rights reserved.</p>
+  </div>
+</footer>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="bottom-item active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </button>
+  <button class="bottom-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+    Search
+  </button>
+  <button class="bottom-item" onclick="openCart()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    Bag
+  </button>
+  <button class="bottom-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    Wishlist
+  </button>
+  <button class="bottom-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
+  </button>
+</div>
+
+<script>
+// ─── PRODUCTS DATA ───
+const products = [
+  {id:1, name:'Al-Noor Embroidered Abaya', brand:'Signature Series', price:4299, oldPrice:5999, badge:'New In', badgeType:'gold', colors:['#0a0a0a','#2c1810','#1a1a2e','#2c2416'], bg:'p-bg-1', wide:true},
+  {id:2, name:'Midnight Silk Abaya', brand:'Luxury Line', price:6499, oldPrice:null, badge:'Bestseller', badgeType:'', colors:['#0a0a0a','#1a1a2e'], bg:'p-bg-2', wide:false},
+  {id:3, name:'Olive Linen Abaya', brand:'Classic Series', price:3199, oldPrice:3999, badge:'', badgeType:'', colors:['#2d3826','#0a0a0a'], bg:'p-bg-3', wide:false},
+  {id:4, name:'Royal Crêpe Abaya', brand:'Luxury Line', price:7999, oldPrice:9999, badge:'Sale', badgeType:'red', colors:['#0a0a0a','#1a0a0a','#0a0a1a'], bg:'p-bg-4', wide:false},
+  {id:5, name:'Zari Embellished Open Abaya', brand:'Signature Series', price:5499, oldPrice:null, badge:'New In', badgeType:'gold', colors:['#0a0a0a','#2c2416'], bg:'p-bg-5', wide:false},
+];
+
+let cart = {};
+
+function discountPercent(p, op){
+  if(!op) return null;
+  return Math.round((op - p) / op * 100);
+}
+
+function renderProducts(){
+  const grid = document.getElementById('productGrid');
+  grid.innerHTML = products.map((p,i) => {
+    const off = discountPercent(p.price, p.oldPrice);
+    return `
+    <div class="product-card ${p.wide?'wide':''}" >
+      <div class="product-img ${p.bg}">
+        <div class="cat-pattern"></div>
+        ${p.badge ? `<span class="product-badge ${p.badgeType}">${p.badge}</span>` : ''}
+        <button class="wishlist-btn" onclick="toggleWishlist(this,${p.id})" title="Wishlist">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </button>
+        <button class="quick-add" onclick="addToCart(${p.id})">Add to Bag</button>
+      </div>
+      <div class="product-info">
+        <p class="product-brand">${p.brand}</p>
+        <p class="product-name">${p.name}</p>
+        <div class="product-price">
+          <span class="price-current">₹${p.price.toLocaleString('en-IN')}</span>
+          ${p.oldPrice ? `<span class="price-old">₹${p.oldPrice.toLocaleString('en-IN')}</span>` : ''}
+          ${off ? `<span class="price-off">${off}% off</span>` : ''}
+        </div>
+        <div class="product-colors">
+          ${p.colors.map((c,ci) => `<div class="color-dot ${ci===0?'active':''}" style="background:${c}" onclick="this.parentNode.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('active'));this.classList.add('active')"></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addToCart(productId){
+  const p = products.find(x => x.id === productId);
+  if(!p) return;
+  cart[productId] = cart[productId] || {product:p, qty:0};
+  cart[productId].qty++;
+  updateCartUI();
+  showToast(`Added to bag`);
+}
+
+function removeFromCart(productId){
+  delete cart[productId];
+  updateCartUI();
+  renderCartItems();
+}
+
+function changeQty(productId, delta){
+  if(!cart[productId]) return;
+  cart[productId].qty += delta;
+  if(cart[productId].qty <= 0) delete cart[productId];
+  updateCartUI();
+  renderCartItems();
+}
+
+function updateCartUI(){
+  const count = Object.values(cart).reduce((s,i) => s + i.qty, 0);
+  document.getElementById('cartCount').textContent = count;
+  renderCartItems();
+}
+
+function renderCartItems(){
+  const items = Object.values(cart);
+  const empty = document.getElementById('cartEmpty');
+  const itemsEl = document.getElementById('cartItems');
+  const footer = document.getElementById('cartFooter');
+  if(items.length === 0){
+    empty.style.display = 'block';
+    itemsEl.innerHTML = '';
+    footer.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  footer.style.display = 'block';
+  const total = items.reduce((s,i) => s + i.product.price * i.qty, 0);
+  document.getElementById('cartTotal').textContent = '₹' + total.toLocaleString('en-IN');
+  itemsEl.innerHTML = items.map(item => `
+    <div class="cart-item">
+      <div class="cart-item-img">
+        <div class="cat-pattern" style="position:absolute;inset:0"></div>
+      </div>
+      <div class="cart-item-info">
+        <div>
+          <p class="cart-item-name">${item.product.name}</p>
+          <p class="cart-item-variant">${item.product.brand}</p>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span class="cart-item-price">₹${(item.product.price * item.qty).toLocaleString('en-IN')}</span>
+          <div class="cart-item-actions">
+            <button class="qty-btn" onclick="changeQty(${item.product.id}, -1)">−</button>
+            <span class="qty-display">${item.qty}</span>
+            <button class="qty-btn" onclick="changeQty(${item.product.id}, 1)">+</button>
+            <button class="cart-remove" onclick="removeFromCart(${item.product.id})">Remove</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openCart(){ document.getElementById('cartDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('open'); }
+function closeCart(){ document.getElementById('cartDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('open'); }
+function openMenu(){ document.getElementById('mobileMenu').classList.add('open'); }
+function closeMenu(){ document.getElementById('mobileMenu').classList.remove('open'); }
+
+function toggleWishlist(btn, id){
+  btn.classList.toggle('active');
+  showToast(btn.classList.contains('active') ? 'Added to wishlist' : 'Removed from wishlist');
+}
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function subscribeEmail(){
+  const email = document.getElementById('emailInput').value;
+  if(email && email.includes('@')){
+    showToast('Subscribed successfully!');
+    document.getElementById('emailInput').value = '';
+  } else {
+    showToast('Please enter a valid email');
+  }
+}
+
+renderProducts();
+</script>
+</body>
+</html>
